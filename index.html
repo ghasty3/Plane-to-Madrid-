@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>plane to Madrid - LoFi Player</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- VARIABLES & RESET --- */
+        :root {
+            --bg-overlay: rgba(10, 10, 16, 0.85); /* Dark violet/black overlay */
+            --glass-bg: rgba(20, 20, 30, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #e0e0e0;
+            --text-dim: #8b8b9e;
+            --accent: #a29bfe; /* Soft Purple */
+            --progress-bg: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-color: #050505;
+            color: var(--text-main);
+        }
+
+        /* --- BACKGROUND --- */
+        /* Imagen de Unsplash: Ventana con lluvia/Luces de ciudad */
+        .background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1517260739337-6799d2ffbeeb?q=80&w=2668&auto=format&fit=crop'); 
+            background-size: cover;
+            background-position: center;
+            z-index: -2;
+            filter: blur(4px); /* Sutil desenfoque base */
+        }
+
+        .background-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-overlay);
+            z-index: -1;
+        }
+
+        /* --- PLAYER CONTAINER (Glassmorphism) --- */
+        .player-card {
+            width: 90%;
+            max-width: 380px;
+            padding: 40px 30px;
+            border-radius: 24px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            transition: transform 0.3s ease;
+        }
+
+        /* --- VINYL RECORD (CSS Only) --- */
+        .vinyl-container {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: #111;
+            background-image: 
+                repeating-radial-gradient(
+                #111 0, 
+                #111 2px, 
+                #222 3px, 
+                #222 4px
+                );
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border: 2px solid #333;
+        }
+
+        /* Etiqueta central del vinilo */
+        .vinyl-label {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #4b4b68, #2c2c3e);
+            border-radius: 50%;
+            border: 2px solid #555;
+        }
+
+        /* Animación de rotación */
+        @keyframes rotateVinyl {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .is-spinning {
+            animation: rotateVinyl 4s linear infinite;
+        }
+
+        /* Animación de Pulso (Ritmo) */
+        @keyframes subtlePulse {
+            0% { transform: scale(1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+            50% { transform: scale(1.02); box-shadow: 0 15px 40px rgba(162, 155, 254, 0.2); }
+            100% { transform: scale(1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        }
+
+        .has-pulse {
+            animation: subtlePulse 2s ease-in-out infinite;
+        }
+
+        /* --- INFO TEXT --- */
+        .song-info {
+            text-align: center;
+        }
+
+        .song-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 5px;
+        }
+
+        .artist-name {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-style: italic;
+        }
+
+        /* --- PROGRESS BAR (Non-interactive) --- */
+        .progress-area {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--progress-bg);
+            border-radius: 2px;
+            overflow: hidden;
+            /* IMPORTANTE: No interactuable */
+            pointer-events: none; 
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+            transition: width 0.1s linear;
+        }
+
+        .time-stamps {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        /* --- CONTROLS --- */
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover {
+            color: var(--accent);
+            transform: scale(1.1);
+        }
+
+        .play-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .play-icon, .pause-icon {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        /* Ocultar pause por defecto */
+        .pause-icon { display: none; }
+        
+        /* Clase para estado 'Playing' */
+        .player-card.playing .play-icon { display: none; }
+        .player-card.playing .pause-icon { display: block; }
+
+        /* --- VOLUME SLIDER --- */
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 80px;
+            height: 3px;
+            background: var(--progress-bg);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--text-main);
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="background-image"></div>
+    <div class="background-overlay"></div>
+
+    <main class="player-card" id="playerCard">
+        
+        <div class="vinyl-container" id="vinyl">
+            <div class="vinyl-label"></div>
+        </div>
+
+        <div class="song-info">
+            <div class="song-title">plane to Madrid</div>
+            <div class="artist-name">Late Night Flight</div>
+        </div>
+
+        <div class="progress-area">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="time-stamps">
+                <span id="currentTime">0:00</span>
+                <span id="duration">0:00</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon></svg>
+            
+            <div class="volume-container">
+                <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.5">
+            </div>
+
+            <button class="play-btn" id="playBtn">
+                <svg class="play-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <svg class="pause-icon" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            </button>
+        </div>
+
+    </main>
+
+    <audio id="audioPlayer" src="audio.mp3" preload="metadata"></audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const audio = document.getElementById('audioPlayer');
+            const playBtn = document.getElementById('playBtn');
+            const playerCard = document.getElementById('playerCard');
+            const vinyl = document.getElementById('vinyl');
+            const progressFill = document.getElementById('progressFill');
+            const currentTimeEl = document.getElementById('currentTime');
+            const durationEl = document.getElementById('duration');
+            const volumeSlider = document.getElementById('volumeSlider');
+
+            // --- Formateo de Tiempo (MM:SS) ---
+            function formatTime(seconds) {
+                const min = Math.floor(seconds / 60);
+                const sec = Math.floor(seconds % 60);
+                return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+            }
+
+            // --- Cargar Duración ---
+            audio.addEventListener('loadedmetadata', () => {
+                durationEl.textContent = formatTime(audio.duration);
+            });
+
+            // --- Lógica Play/Pause ---
+            playBtn.addEventListener('click', () => {
+                if (audio.paused) {
+                    // Play
+                    audio.play();
+                    playerCard.classList.add('playing');
+                    vinyl.classList.add('is-spinning');
+                    vinyl.classList.add('has-pulse');
+                } else {
+                    // Pause
+                    audio.pause();
+                    playerCard.classList.remove('playing');
+                    vinyl.classList.remove('is-spinning'); // Pausa la animación
+                    vinyl.classList.remove('has-pulse');
+                    
+                    // Truco para detener la rotación exactamente donde está (opcional para realismo)
+                    // Para simplificar en lo-fi, quitar la clase resetea la rotación, lo cual está bien.
+                }
+            });
+
+            // --- Actualizar Barra de Progreso ---
+            audio.addEventListener('timeupdate', () => {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                progressFill.style.width = `${percent}%`;
+                currentTimeEl.textContent = formatTime(audio.currentTime);
+            });
+
+            // --- Control de Volumen ---
+            volumeSlider.addEventListener('input', (e) => {
+                audio.volume = e.target.value;
+            });
+
+            // --- Cuando termina la canción ---
+            audio.addEventListener('ended', () => {
+                playerCard.classList.remove('playing');
+                vinyl.classList.remove('is-spinning');
+                vinyl.classList.remove('has-pulse');
+                progressFill.style.width = '0%';
+                currentTimeEl.textContent = '0:00';
+                // Opcional: audio.currentTime = 0;
+            });
+
+            // --- Fallback por si no hay audio.mp3 (Para testeo) ---
+            audio.addEventListener('error', () => {
+                console.log("No se encontró audio.mp3 local. Usando audio de prueba.");
+                // Audio lofi libre de derechos para testear
+                audio.src = "https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3"; 
+            });
+        });
+    </script>
+</body>
+</html>
