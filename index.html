@@ -11,20 +11,17 @@
     <style>
         /* --- VARIABLES & RESET --- */
         :root {
-            --bg-overlay: rgba(10, 10, 16, 0.85); /* Dark violet/black overlay */
+            --bg-overlay: rgba(10, 10, 16, 0.85);
             --glass-bg: rgba(20, 20, 30, 0.45);
             --glass-border: rgba(255, 255, 255, 0.08);
             --text-main: #e0e0e0;
             --text-dim: #8b8b9e;
-            --accent: #a29bfe; /* Soft Purple */
+            --accent: #a29bfe;
             --progress-bg: rgba(255, 255, 255, 0.1);
+            --error-color: #ff6b6b;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Space Mono', monospace;
@@ -39,31 +36,24 @@
         }
 
         /* --- BACKGROUND --- */
-        /* Imagen de Unsplash: Ventana con lluvia/Luces de ciudad */
         .background-image {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background-image: url('https://images.unsplash.com/photo-1517260739337-6799d2ffbeeb?q=80&w=2668&auto=format&fit=crop'); 
             background-size: cover;
             background-position: center;
             z-index: -2;
-            filter: blur(4px); /* Sutil desenfoque base */
+            filter: blur(4px);
         }
 
         .background-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-overlay);
             z-index: -1;
         }
 
-        /* --- PLAYER CONTAINER (Glassmorphism) --- */
+        /* --- PLAYER CARD --- */
         .player-card {
             width: 90%;
             max-width: 380px;
@@ -78,182 +68,75 @@
             flex-direction: column;
             align-items: center;
             gap: 25px;
-            transition: transform 0.3s ease;
+            position: relative;
         }
 
-        /* --- VINYL RECORD (CSS Only) --- */
+        /* Error Message overlay */
+        .error-msg {
+            display: none;
+            color: var(--error-color);
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: -10px;
+            background: rgba(0,0,0,0.3);
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        /* --- VINYL RECORD --- */
         .vinyl-container {
-            width: 180px;
-            height: 180px;
+            width: 180px; height: 180px;
             border-radius: 50%;
             background: #111;
-            background-image: 
-                repeating-radial-gradient(
-                #111 0, 
-                #111 2px, 
-                #222 3px, 
-                #222 4px
-                );
+            background-image: repeating-radial-gradient(#111 0, #111 2px, #222 3px, #222 4px);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+            display: flex; justify-content: center; align-items: center;
             border: 2px solid #333;
         }
 
-        /* Etiqueta central del vinilo */
         .vinyl-label {
-            width: 60px;
-            height: 60px;
+            width: 60px; height: 60px;
             background: linear-gradient(135deg, #4b4b68, #2c2c3e);
             border-radius: 50%;
             border: 2px solid #555;
         }
 
-        /* Animación de rotación */
-        @keyframes rotateVinyl {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
+        @keyframes rotateVinyl { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .is-spinning { animation: rotateVinyl 4s linear infinite; }
 
-        .is-spinning {
-            animation: rotateVinyl 4s linear infinite;
-        }
-
-        /* Animación de Pulso (Ritmo) */
         @keyframes subtlePulse {
             0% { transform: scale(1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
             50% { transform: scale(1.02); box-shadow: 0 15px 40px rgba(162, 155, 254, 0.2); }
             100% { transform: scale(1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         }
+        .has-pulse { animation: subtlePulse 2s ease-in-out infinite; }
 
-        .has-pulse {
-            animation: subtlePulse 2s ease-in-out infinite;
-        }
+        /* --- TEXT & CONTROLS --- */
+        .song-info { text-align: center; }
+        .song-title { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 5px; }
+        .artist-name { font-size: 0.85rem; color: var(--text-dim); font-style: italic; }
 
-        /* --- INFO TEXT --- */
-        .song-info {
-            text-align: center;
-        }
+        .progress-area { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+        .progress-bar { width: 100%; height: 4px; background: var(--progress-bg); border-radius: 2px; overflow: hidden; pointer-events: none; }
+        .progress-fill { width: 0%; height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.1s linear; }
+        .time-stamps { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-dim); }
 
-        .song-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin-bottom: 5px;
-        }
-
-        .artist-name {
-            font-size: 0.85rem;
-            color: var(--text-dim);
-            font-style: italic;
-        }
-
-        /* --- PROGRESS BAR (Non-interactive) --- */
-        .progress-area {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background: var(--progress-bg);
-            border-radius: 2px;
-            overflow: hidden;
-            /* IMPORTANTE: No interactuable */
-            pointer-events: none; 
-        }
-
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background: var(--accent);
-            border-radius: 2px;
-            transition: width 0.1s linear;
-        }
-
-        .time-stamps {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.7rem;
-            color: var(--text-dim);
-        }
-
-        /* --- CONTROLS --- */
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            width: 100%;
-            justify-content: center;
-        }
-
-        button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-main);
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        button:hover {
-            color: var(--accent);
-            transform: scale(1.1);
-        }
-
-        .play-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .play-icon, .pause-icon {
-            width: 24px;
-            height: 24px;
-            fill: currentColor;
-        }
-
-        /* Ocultar pause por defecto */
-        .pause-icon { display: none; }
+        .controls { display: flex; align-items: center; gap: 20px; width: 100%; justify-content: center; }
+        button { background: none; border: none; cursor: pointer; color: var(--text-main); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; }
+        button:hover { color: var(--accent); transform: scale(1.1); }
         
-        /* Clase para estado 'Playing' */
+        .play-btn { width: 60px; height: 60px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .play-icon, .pause-icon { width: 24px; height: 24px; fill: currentColor; }
+        .pause-icon { display: none; }
         .player-card.playing .play-icon { display: none; }
         .player-card.playing .pause-icon { display: block; }
 
-        /* --- VOLUME SLIDER --- */
-        .volume-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .volume-container input[type="range"] {
+            -webkit-appearance: none; width: 80px; height: 3px; background: var(--progress-bg); border-radius: 2px; outline: none;
         }
-
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 80px;
-            height: 3px;
-            background: var(--progress-bg);
-            border-radius: 2px;
-            outline: none;
+        .volume-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%; background: var(--text-main); cursor: pointer;
         }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--text-main);
-            cursor: pointer;
-        }
-
     </style>
 </head>
 <body>
@@ -262,7 +145,6 @@
     <div class="background-overlay"></div>
 
     <main class="player-card" id="playerCard">
-        
         <div class="vinyl-container" id="vinyl">
             <div class="vinyl-label"></div>
         </div>
@@ -272,32 +154,36 @@
             <div class="artist-name">Late Night Flight</div>
         </div>
 
+        <!-- Mensaje de error oculto por defecto -->
+        <div id="errorMsg" class="error-msg">
+            Error: El navegador bloqueó el archivo local. <br> Usa "Live Server" o prueba en Firefox.
+        </div>
+
         <div class="progress-area">
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
             </div>
             <div class="time-stamps">
                 <span id="currentTime">0:00</span>
-                <span id="duration">0:00</span>
+                <span id="duration">--:--</span>
             </div>
         </div>
 
         <div class="controls">
+            <!-- Vol Icon -->
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon></svg>
-            
             <div class="volume-container">
                 <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.5">
             </div>
-
             <button class="play-btn" id="playBtn">
                 <svg class="play-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                 <svg class="pause-icon" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
             </button>
         </div>
-
     </main>
 
-    <audio id="audioPlayer" src="audio.mp3" preload="metadata"></audio>
+    <!-- INTENTO DE CARGA LOCAL DIRECTA -->
+    <audio id="audioPlayer" src="audio.mp3" preload="auto"></audio>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -309,68 +195,103 @@
             const currentTimeEl = document.getElementById('currentTime');
             const durationEl = document.getElementById('duration');
             const volumeSlider = document.getElementById('volumeSlider');
+            const errorMsg = document.getElementById('errorMsg');
 
-            // --- Formateo de Tiempo (MM:SS) ---
             function formatTime(seconds) {
+                if(isNaN(seconds)) return "0:00";
                 const min = Math.floor(seconds / 60);
                 const sec = Math.floor(seconds % 60);
                 return `${min}:${sec < 10 ? '0' : ''}${sec}`;
             }
 
-            // --- Cargar Duración ---
             audio.addEventListener('loadedmetadata', () => {
                 durationEl.textContent = formatTime(audio.duration);
+                errorMsg.style.display = 'none'; // Si carga metadata, ocultar error
             });
 
-            // --- Lógica Play/Pause ---
+            // Manejo de Errores de Carga
+            audio.addEventListener('error', (e) => {
+                console.error("Error cargando audio:", e);
+                // Mostrar mensaje de error en pantalla para que sepas qué pasa
+                errorMsg.style.display = 'block';
+            });
+
             playBtn.addEventListener('click', () => {
-                if (audio.paused) {
-                    // Play
-                    audio.play();
-                    playerCard.classList.add('playing');
-                    vinyl.classList.add('is-spinning');
-                    vinyl.classList.add('has-pulse');
-                } else {
-                    // Pause
+                // Verificar si el audio está listo o intentar reproducir
+                const playPromise = audio.play();
+
+                if (playPromise !== undefined) {
+                    playPromise.then(_ => {
+                        // Reproducción exitosa
+                        playerCard.classList.add('playing');
+                        vinyl.classList.add('is-spinning');
+                        vinyl.classList.add('has-pulse');
+                        errorMsg.style.display = 'none';
+                    })
+                    .catch(error => {
+                        // Error al reproducir (posible bloqueo)
+                        console.error("Fallo al reproducir:", error);
+                        playerCard.classList.remove('playing');
+                        // No mostramos error si es pausa intencional, solo si falló el inicio
+                        if(!audio.paused) errorMsg.style.display = 'block';
+                    });
+                }
+                
+                if (!audio.paused && playerCard.classList.contains('playing')) {
+                   // Lógica para pausar si ya está sonando (toggle)
+                   // El bloque de arriba maneja el "play", aquí manejamos la pausa manual
+                } else if (!audio.paused) {
                     audio.pause();
                     playerCard.classList.remove('playing');
-                    vinyl.classList.remove('is-spinning'); // Pausa la animación
+                    vinyl.classList.remove('is-spinning');
                     vinyl.classList.remove('has-pulse');
-                    
-                    // Truco para detener la rotación exactamente donde está (opcional para realismo)
-                    // Para simplificar en lo-fi, quitar la clase resetea la rotación, lo cual está bien.
                 }
             });
+            
+            // Fix para el botón: lógica simplificada de Toggle
+            playBtn.onclick = function(e) {
+                e.preventDefault(); // Prevenir doble firing
+                e.stopPropagation();
+                
+                if (audio.paused) {
+                    audio.play().then(() => {
+                        playerCard.classList.add('playing');
+                        vinyl.classList.add('is-spinning');
+                        vinyl.classList.add('has-pulse');
+                    }).catch(err => {
+                        console.log(err);
+                        errorMsg.style.display = 'block';
+                    });
+                } else {
+                    audio.pause();
+                    playerCard.classList.remove('playing');
+                    vinyl.classList.remove('is-spinning');
+                    vinyl.classList.remove('has-pulse');
+                }
+            };
 
-            // --- Actualizar Barra de Progreso ---
+            // Remover el listener anterior para evitar conflictos
+            // playBtn.addEventListener('click', ...) se reemplaza por playBtn.onclick
+
             audio.addEventListener('timeupdate', () => {
                 const percent = (audio.currentTime / audio.duration) * 100;
                 progressFill.style.width = `${percent}%`;
                 currentTimeEl.textContent = formatTime(audio.currentTime);
             });
 
-            // --- Control de Volumen ---
             volumeSlider.addEventListener('input', (e) => {
                 audio.volume = e.target.value;
             });
 
-            // --- Cuando termina la canción ---
             audio.addEventListener('ended', () => {
                 playerCard.classList.remove('playing');
                 vinyl.classList.remove('is-spinning');
                 vinyl.classList.remove('has-pulse');
                 progressFill.style.width = '0%';
                 currentTimeEl.textContent = '0:00';
-                // Opcional: audio.currentTime = 0;
-            });
-
-            // --- Fallback por si no hay audio.mp3 (Para testeo) ---
-            audio.addEventListener('error', () => {
-                console.log("No se encontró audio.mp3 local. Usando audio de prueba.");
-                // Audio lofi libre de derechos para testear
-                audio.src = "https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3"; 
             });
         });
     </script>
 </body>
 </html>
+
